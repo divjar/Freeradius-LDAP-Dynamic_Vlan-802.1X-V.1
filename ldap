@@ -1,0 +1,53 @@
+ldap {
+    server = '10.10.1.251'
+    port = 389
+    identity = 'cn=admin,dc=ldap,dc=umm'
+    password = lsibi5mill4h
+    base_dn = 'dc=ldap,dc=umm'
+
+    update {
+        control:Password-With-Header    += 'userPassword'
+        control:NT-Password             := 'ntPassword'
+        reply:Reply-Message             := 'radiusReplyMessage'
+        
+        # HAPUS mapping ini dari sini - salah tempat!
+        # control:LDAP-uid                := 'uid'
+        # control:LDAP-cn                 := 'cn'
+        # control:LDAP-gidNumber          := 'gidNumber'
+    }
+
+    user {
+        base_dn = "ou=People,dc=ldap,dc=umm"
+        # FLEXIBLE: cari di uid ATAU cn
+        filter = "(|(uid=%{%{Stripped-User-Name}:-%{User-Name}})(cn=%{%{Stripped-User-Name}:-%{User-Name}}))"
+        access_positive = yes
+    }
+
+    group {
+        base_dn = "ou=group,dc=ldap,dc=umm"
+        filter = '(objectClass=posixGroup)'
+        name_attribute = cn
+        
+        # SIMPLIFIKASI: Gunakan langsung Stripped-User-Name/User-Name
+        # Karena memberUid biasanya menggunakan uid (baharuddinamien)
+        # Tapi jika user login dengan cn (202010370311392), akan gagal
+        
+        # OPTION 1: Coba dengan input langsung (mungkin work)
+        membership_filter = "(memberUid=%{%{Stripped-User-Name}:-%{User-Name}})"
+        
+        # OPTION 2: Jika option 1 gagal, COMMENT dulu group section
+        # Dan gunakan gidNumber dari user object untuk VLAN assignment
+        
+        cacheable_name = 'yes'
+        cacheable_dn = 'no'
+    }
+    
+    # TAMBAH update section untuk mengambil uid dari LDAP
+    # Ini harus di luar user/group section
+    update control {
+        # Ambil uid dari user object yang ditemukan
+        LDAP-User-uid := 'uid'
+        LDAP-User-cn := 'cn'
+        LDAP-User-gidNumber := 'gidNumber'
+    }
+}
