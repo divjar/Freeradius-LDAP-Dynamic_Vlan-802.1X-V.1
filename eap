@@ -1,0 +1,39 @@
+eap {
+    default_eap_type = ttls
+    timer_expire = 60
+    max_sessions = ${max_requests}
+
+    tls-config tls-common {
+        certificate_file = ${certdir}/ca.pem
+        private_key_file = ${certdir}/ca.key
+        private_key_password = ""
+        ca_file = ${cadir}/ca.pem
+        fragment_size = 1024
+        ocsp {
+            enable = yes
+            override_cert_url = no
+            use_nonce = yes
+        }
+    }
+
+    tls {
+        tls = tls-common
+        disable_tlsv1_2 = no
+        disable_tlsv1_1 = no
+        disable_tlsv1 = no
+    }
+
+    ttls {
+        tls = tls-common
+        default_eap_type = mschapv2
+        virtual_server = "umm-tunnel"
+        use_tunneled_reply = yes
+    }
+
+    peap {
+        tls = tls-common
+        default_eap_type = mschapv2
+        virtual_server = "umm-tunnel"
+        use_tunneled_reply = yes
+    }
+}
