@@ -1,0 +1,61 @@
+server default {
+    listen {
+        type = auth
+        ipaddr = *
+        port = 1812 
+    }
+    
+    authorize {
+        filter_username
+        chap
+        mschap
+        eap {
+            ok = return
+            updated = return
+        }
+        ldap
+        
+        # VLAN assignment berdasarkan LDAP Group
+if ("%{control:LDAP-Group}" =~ /Karyawan/) {
+    update reply {
+        Tunnel-Type := VLAN
+        Tunnel-Medium-Type := IEEE-802
+        Tunnel-Private-Group-ID := "192"
+        Reply-Message := "VLAN 192 - Karyawan"
+    }
+}
+elsif ("%{control:LDAP-Group}" =~ /Mahasiswa/) {
+    update reply {
+        Tunnel-Type := VLAN
+        Tunnel-Medium-Type := IEEE-802
+        Tunnel-Private-Group-ID := "254"
+        Reply-Message := "VLAN 254 - Mahasiswa"
+    }
+}
+else {
+    update reply {
+        Tunnel-Type := VLAN
+        Tunnel-Medium-Type := IEEE-802
+        Tunnel-Private-Group-ID := "161"
+        Reply-Message := "Default VLAN 161 (No Group)"
+    }
+}        
+        pap
+    }
+
+    authenticate {
+        Auth-Type PAP {
+            pap
+        }
+        Auth-Type CHAP {
+            chap
+        }
+        Auth-Type MS-CHAP {
+            mschap
+        }
+        Auth-Type LDAP {
+            ldap
+        }
+        eap
+    }
+}
